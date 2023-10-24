@@ -14,3 +14,9 @@ After this the device goes again on "waiting for response" mode.
 Goal of the project:
 
 The goal was to solve a real world problem and in the journey program an avr without arduino, learn about interrupts and timers, and finally about pcb design.
+
+
+![pizza_clock_1](https://github.com/LucasCanete/KitchenAlarm/assets/57593487/5ca24377-a864-4aa4-a371-c07be57d8711)
+
+
+![pizza_clock_2](https://github.com/LucasCanete/KitchenAlarm/assets/57593487/21c0dfde-b75c-4e0b-abf3-99eb028f383b)
