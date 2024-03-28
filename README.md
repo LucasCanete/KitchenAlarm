@@ -16,6 +16,7 @@ After this the device goes again on "waiting for response" mode.
 
 <h2>What i learned</h2>
  <br>-Program atmega168 without arduino</br>
+ <br>-Use of interrupts</br>
  <br>-Use of timers</br>
  <br>-Use of deep sleep</br>
  <br>-A bit about pcb design</br>
