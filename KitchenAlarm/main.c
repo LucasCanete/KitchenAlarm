@@ -38,30 +38,89 @@
 #include <Buzzer.h>
 #include <USART.h>
 
+typedef enum {IDLE, PROG_MIN, PROG_SEC, COUNTDOWN, BEEP} state_t;
+
+state_t state = IDLE;
+state_t prev_state = BEEP;
+typedef enum {NONE,CLOCKWISE, COUNTERCLOCKWISE} rotary_dir_t;
+
+
 volatile bool beep_activated = false;
-volatile bool was_sleeping = 0;
+volatile bool was_sleeping = false;
 volatile uint16_t COUNTER_TIMEOUT = 0;
 bool alarm_is_set = false;
 #define SW PD5
 #define DT PD6
 #define CLK PD7
-uint8_t button_layer = 0; //1: configurate minutes | 2:configurate seconds| 3:exit menu
+
 int8_t unit_sec = 0;
 int8_t ten_sec = 0;
 	
 int8_t unit_min = 0;
 int8_t ten_min = 0;
 
+
+
+void beep_and_blink(){
+	setBit(PORTD,PD2);
+	buzzer_peep(&PORTC,PC5);
+	_delay_ms(200);
+	clearBit(PORTD,PD2);
+	buzzer_stop(&PORTC,PC5);
+	_delay_ms(200);
+}
+
+
+
+
+void display_minutes(){
+	clearBit(PORTC,PC0);//setBit(PORTC,PC0);
+	SevSeg_display_digit(&PORTB,ten_min);
+	_delay_ms(1);
+	SevSeg_clear(&PORTB);
+	setBit(PORTC,PC0);//clearBit(PORTC,PC0);
+
+	clearBit(PORTC,PC1);//setBit(PORTC,PC1);
+	setBit(PORTC,PC4);// activate decimal point
+	SevSeg_display_digit(&PORTB,unit_min);
+	_delay_ms(1);
+	SevSeg_clear(&PORTB);
+	clearBit(PORTC,PC4);// deactivate decimal point
+	setBit(PORTC,PC1);//clearBit(PORTC,PC1);
+}
+
+
+void display_seconds(){
+	clearBit(PORTC,PC2);
+	SevSeg_display_digit(&PORTB,ten_sec);
+	_delay_ms(1);
+	SevSeg_clear(&PORTB);
+	setBit(PORTC,PC2);
+
+	clearBit(PORTC,PC3);
+	SevSeg_display_digit(&PORTB,unit_sec);
+	_delay_ms(1);
+	SevSeg_clear(&PORTB);
+	setBit(PORTC,PC3);
+}
+
+/**
+ * @brief Construct a new ISR object
+ * 
+ * Counts to one minute if it is in IDLE sleep
+ * if alarm activavated then decrease counter
+ */
+
 ISR(TIMER1_COMPA_vect){
 	
 		COUNTER_TIMEOUT++;
 		if(alarm_is_set && (unit_min + ten_min + unit_sec+ten_sec > 0)) unit_sec--;
-		 else if(COUNTER_TIMEOUT == 60 && !alarm_is_set && button_layer == 0  ){
+		 else if(COUNTER_TIMEOUT == 60 && !alarm_is_set && state == IDLE  ){
 	
 			SevSeg_clear(&PORTB);
-			setBit(PORTC,PC4); //deactivate decimal point
+			clearBit(PORTC,PC4); //deactivate decimal point
 			COUNTER_TIMEOUT = 0;
-			was_sleeping = 1;
+			was_sleeping = true;
 			
 			set_sleep_mode(SLEEP_MODE_PWR_DOWN);   // Set power-down sleep mode
 			cli(); //cli before sleep enable to avoid interferance with interrupts
@@ -70,19 +129,64 @@ ISR(TIMER1_COMPA_vect){
 			sleep_cpu();
 		
 		}
-		
-		
 
 };
 
-
+/**
+ * @brief 
+ * State Handler function 
+ * Dependent on switch button
+ */
+volatile uint8_t prevButtonVal = 1; //default state HIGH because of PULLUP RESISTOR
 ISR(PCINT2_vect ) {
 	//wake uC up
-	beep_activated = false;
 	printString("waking up!!! \r\n");
+
+	uint8_t currentButtonVal = gpioReadPin(&PIND,SW);
+	//Falling Edge
+	if(prevButtonVal && !currentButtonVal){
+		switch(state){
+
+			case IDLE:
+				if(!was_sleeping){
+					prev_state = IDLE;
+					state = PROG_MIN;
+				}
+				break;
+			case PROG_MIN:
+				prev_state = PROG_MIN;
+				state = PROG_SEC;
+				break;
+			case PROG_SEC:
+				alarm_is_set = true;
+				prev_state = PROG_SEC;
+				state = COUNTDOWN;
+				break;
+			case COUNTDOWN:
+				alarm_is_set = false;
+				prev_state = COUNTDOWN;
+				state = IDLE;
+				break;
+
+			case BEEP:
+				prev_state = BEEP;
+				state = IDLE;
+				break;
+		}
+	}
+
+	prevButtonVal = currentButtonVal;
 
 }
 
+/**
+ * @brief 
+ * 
+ * @param minute_unit 
+ * the unit part of the minute
+ * @param minute_ten 
+ * the tenth part of the minute
+ */
 
 void UpDownCounterMinute(int8_t *minute_unit, int8_t *minute_ten){
 
@@ -106,6 +210,17 @@ void UpDownCounterMinute(int8_t *minute_unit, int8_t *minute_ten){
 	
 };
 
+
+/**
+ * @brief 
+ * 
+ * @param sec_unit 
+ * the ones
+ * @param sec_ten 
+ * the tens
+ * @param min_unit 
+ * to bind it to the minutes variable
+ */
 void UpDownCounterSecond(int8_t *sec_unit, int8_t *sec_ten, int8_t *min_unit ){
 
 
@@ -131,65 +246,54 @@ void UpDownCounterSecond(int8_t *sec_unit, int8_t *sec_ten, int8_t *min_unit ){
 			*sec_unit = 9;
 	}
 	
-
-
 	
 };
 
 
 void alarm_countdown(int8_t *ten_min, int8_t *unit_min, int8_t *ten_sec, int8_t *unit_sec){
 	
-		//4ms x 250 = 1s
-	
-		//for(uint8_t i = 0; i <= 120; i++){
-			
-			setBit(PORTC,PC2);
+			clearBit(PORTC,PC2);
 			SevSeg_display_digit(&PORTB,*ten_sec);
 			_delay_ms(1);
 			SevSeg_clear(&PORTB);
-			clearBit(PORTC,PC2);
+			setBit(PORTC,PC2);
 			
-			setBit(PORTC,PC3);
+			clearBit(PORTC,PC3);
 			SevSeg_display_digit(&PORTB,*unit_sec);
 			_delay_ms(1);
 			SevSeg_clear(&PORTB);
-			clearBit(PORTC,PC3);
+			setBit(PORTC,PC3);
 			
-			setBit(PORTC,PC0);
+			clearBit(PORTC,PC0);
 			SevSeg_display_digit(&PORTB,*ten_min);
 			_delay_ms(1);
 			SevSeg_clear(&PORTB);
-			clearBit(PORTC,PC0);
+			setBit(PORTC,PC0);
 			
-			setBit(PORTC,PC1);
-			SevSeg_display_digit(&PORTB,*unit_min);
-			clearBit(PORTC,PC4);// activate decimal point
-			_delay_ms(1);
-			setBit(PORTC,PC4);// deactivate decimal point
-			SevSeg_clear(&PORTB);
 			clearBit(PORTC,PC1);
-			
-			
-			
-		//}
-		//(*unit_sec)--;
-	
+			setBit(PORTC,PC4);// activate decimal point
+			SevSeg_display_digit(&PORTB,*unit_min);
+			_delay_ms(1);
+			SevSeg_clear(&PORTB);
+			clearBit(PORTC,PC4);// deactivate decimal point
+			setBit(PORTC,PC1);
 	
 }
+
+
 //returns if rotary is rotating clockwise 1 or counterclockwise 0
 uint8_t rotaryEncoderdirection(uint8_t *current_clkstate, uint8_t *last_clkstate){
 	uint8_t dir = 3;
+	//rotary_dir_t dir = NONE;
 	if(*current_clkstate != *last_clkstate && *current_clkstate == 0){
 		uint8_t dt_state = bit_is_set(PIND,DT);
 		if(dt_state != *current_clkstate){//clockwise
-			//printString("Horario \r\n"); 
-			dir = 1;
-			
+
+				dir = CLOCKWISE;
 			} 
 		else if(dt_state == *current_clkstate){//counterclockwise
-			//printString("Antihorario \r\n");
-			dir = 2;
-			
+
+				dir = COUNTERCLOCKWISE;
 			} 
 		
 	}
@@ -198,16 +302,6 @@ uint8_t rotaryEncoderdirection(uint8_t *current_clkstate, uint8_t *last_clkstate
 	return dir;
 }
 
-//for debouncing purposes
-uint8_t button_pressed(){
-	if(bit_is_clear(PIND,SW)){
-		_delay_ms(10);
-		if(bit_is_clear(PIND,SW)) {return (1);}
-		
-	}
-	
-	return (0);
-}
 
 void initTimer_16bit(){
 	
@@ -256,151 +350,103 @@ int main(void)
 	clearBit(DDRD,SW); //switch if pressed a 0 is read
 	
 	lastStateClk = bit_is_set(PIND,CLK); //return non zero if bit is clear. 0 if bit is set
+
+
 	
 
     while (1) 
     {
 
-		//Configurate Minutes
-		if(button_pressed() && !was_sleeping){
-			button_layer++; //layer 1
-			_delay_ms(500);//for stabilisation
-			while(button_layer == 1){
-				
-				//Display Minutes, seconds won't be shown
-					setBit(PORTC,PC0);
-					SevSeg_display_digit(&PORTB,ten_min);
-					_delay_ms(1);
-					SevSeg_clear(&PORTB);
-					clearBit(PORTC,PC0);
-							
-					setBit(PORTC,PC1);
-					SevSeg_display_digit(&PORTB,unit_min);
-					clearBit(PORTC,PC4);// activate decimal point
-					_delay_ms(1);
-					setBit(PORTC,PC4);// deactivate decimal point
-					SevSeg_clear(&PORTB);
-					clearBit(PORTC,PC1);
-				///////////////////			
-				
-				currentStateClk = bit_is_set(PIND,CLK);
+		switch(state){
+			case IDLE:
+				if(state != prev_state || was_sleeping){
+					was_sleeping = 0;
+					unit_sec = 0;
+					unit_min = 0;
+					ten_sec = 0;
+					ten_min = 0;
+					_delay_ms(500);
+					prev_state = state;
+				}
+				display_seconds();
+				display_minutes();
 
+				break;
+
+
+			case PROG_MIN:
+				if(state != prev_state){
+					_delay_ms(500);
+					prev_state = state;
+				}
+				display_minutes();
+
+				currentStateClk = bit_is_set(PIND,CLK);
 				rotary_direction = rotaryEncoderdirection(&currentStateClk,&lastStateClk);
-				//Clockwise
-				if(rotary_direction == 1 ){
+				if(rotary_direction == CLOCKWISE ){
 					unit_min++;
 					UpDownCounterMinute(&unit_min, &ten_min);
-					} 
-				//CounterClockwise
-				else if(rotary_direction == 2){
+					}
+
+				else if(rotary_direction == COUNTERCLOCKWISE){
 					unit_min--;
-					UpDownCounterMinute(&unit_min, &ten_min);					
+					UpDownCounterMinute(&unit_min, &ten_min);
 					}
-				//Configurate Seconds
-				if(button_pressed()){
-					button_layer++; //layer 2
+
+				break;
+
+
+			case PROG_SEC:
+				if(state != prev_state){
 					_delay_ms(500);
-					while(button_layer == 2){
-					
-						//Display Seconds, Minutes won't be shown
-						setBit(PORTC,PC2);
-						SevSeg_display_digit(&PORTB,ten_sec);
-						_delay_ms(1);
-						SevSeg_clear(&PORTB);
-						clearBit(PORTC,PC2);
-					
-						setBit(PORTC,PC3);
-						SevSeg_display_digit(&PORTB,unit_sec);
-						_delay_ms(1);
-						SevSeg_clear(&PORTB);
-						clearBit(PORTC,PC3);
-						////////////////////////////
-						currentStateClk = bit_is_set(PIND,CLK);
-
-						rotary_direction = rotaryEncoderdirection(&currentStateClk,&lastStateClk);
-						//Clockwise
-						if(rotary_direction == 1 ){
-							unit_sec++;
-							UpDownCounterMinute(&unit_sec, &ten_sec);
-
-						}
-						//CounterClockwise
-						else if(rotary_direction == 2){
-							unit_sec--;
-							UpDownCounterMinute(&unit_sec, &ten_sec);						
-						}
-						if(button_pressed()) button_layer++; //layer 3				
-					}
-				
+					prev_state = state;
 				}
-	
-				
-				
-			}
 
-			alarm_is_set = true; //activate alarm
-			button_layer = 0;
-		}
-	
+				display_seconds();
 
-		_delay_ms(10);
-		
-	/*if*/while(alarm_is_set){
-		
-			alarm_countdown(&ten_min,&unit_min,&ten_sec,&unit_sec); //keep here always before updowncountersecond function
-			UpDownCounterSecond(&unit_sec, &ten_sec,&unit_min);
-			UpDownCounterMinute(&unit_min, &ten_min);
-
-	
-			if((ten_min + unit_min + ten_sec + unit_sec) == 0 ){
-				beep_activated = true;
-				while(beep_activated){
-					setBit(PORTD,PD2);		
-					buzzer_peep(&PORTC,PC5);
-					_delay_ms(200);
-					clearBit(PORTD,PD2);
-					buzzer_stop(&PORTC,PC5);
-					_delay_ms(200);
+				currentStateClk = bit_is_set(PIND,CLK);
+				rotary_direction = rotaryEncoderdirection(&currentStateClk,&lastStateClk);
+				if(rotary_direction == CLOCKWISE){
+					unit_sec++;
+					UpDownCounterMinute(&unit_sec, &ten_sec);
 				}
-				COUNTER_TIMEOUT = 0;
-				//unit_sec = 1;
-				alarm_is_set = false; //deactivate alarm
-				_delay_ms(600);	
-			}
-		
+				else if(rotary_direction == COUNTERCLOCKWISE){
+					unit_sec--;
+					UpDownCounterMinute(&unit_sec, &ten_sec);
+				}
+
+				break;
+
+
+			case COUNTDOWN:
+				if(state != prev_state){
+					_delay_ms(500);
+					prev_state = state;
+				}
+
+				alarm_countdown(&ten_min,&unit_min,&ten_sec,&unit_sec); //keep here always before updowncountersecond function
+				UpDownCounterSecond(&unit_sec, &ten_sec,&unit_min);
+				UpDownCounterMinute(&unit_min, &ten_min);
+
+				if((ten_min + unit_min + ten_sec + unit_sec) == 0 ) {
+					COUNTER_TIMEOUT = 0;
+					alarm_is_set = false;
+					state = BEEP;}
+
+				break;
+
+
+			case BEEP:
+				if(state != prev_state){
+					_delay_ms(500);
+					prev_state = state;
+				}
+				beep_and_blink();
+
+				break;
+
 		}
-		
-  /*else if*/ if(!alarm_is_set){
-			if(was_sleeping){_delay_ms(500);was_sleeping = 0;}
-				
-			setBit(PORTC,PC2);
-			SevSeg_display_digit(&PORTB,ten_sec);
-			_delay_ms(1);
-			SevSeg_clear(&PORTB);
-			clearBit(PORTC,PC2);
-					
-			setBit(PORTC,PC3);
-			SevSeg_display_digit(&PORTB,unit_sec);
-			_delay_ms(1);
-			SevSeg_clear(&PORTB);
-			clearBit(PORTC,PC3);
-						
-			setBit(PORTC,PC0);
-			SevSeg_display_digit(&PORTB,ten_min);
-			_delay_ms(1);
-			SevSeg_clear(&PORTB);
-			clearBit(PORTC,PC0);
-						
-			setBit(PORTC,PC1);
-			SevSeg_display_digit(&PORTB,unit_min);
-			clearBit(PORTC,PC4);// activate decimal point
-			_delay_ms(1);
-			setBit(PORTC,PC4); //deactivate decimal point
-			SevSeg_clear(&PORTB);
-			clearBit(PORTC,PC1);
-			
-		}
-		
+
 	} //while super loop
 	
 } //main
