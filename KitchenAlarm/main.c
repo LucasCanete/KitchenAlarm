@@ -163,6 +163,7 @@ ISR(PCINT2_vect ) {
 				state = COUNTDOWN;
 				break;
 			case COUNTDOWN:
+				COUNTER_TIMEOUT = 0;
 				alarm_is_set = false;
 				prev_state = COUNTDOWN;
 				state = IDLE;
