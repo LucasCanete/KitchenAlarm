@@ -324,6 +324,13 @@ int main(void)
 	initTimer_16bit(); //every second
 	
 	initUSART();
+
+	//disable Analog Comparator
+	ACSR |= (1<<ACD);
+
+	//turn off ADC
+	ADCSRA &= ~(1<<ADEN);
+	
 	uint8_t currentStateClk;
 	uint8_t lastStateClk;
 	uint8_t rotary_direction;
