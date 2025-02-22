@@ -1,0 +1,4 @@
+(sym_lib_table
+  (lib (name "ME2108A33P")(type "KiCad")(uri "/home/lucas/Kicad_projects/Libraries/ME2108A33P/ME2108A33P.kicad_sym")(options "")(descr ""))
+  (lib (name "TSW-105-24-L-D")(type "KiCad")(uri "/home/lucas/Kicad_projects/Libraries/male_pin_header_10/TSW-105-24-L-D.kicad_sym")(options "")(descr ""))
+)
