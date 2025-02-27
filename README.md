@@ -1,32 +1,31 @@
 # KitchenAlarm
- A timer to avoid forgetting stuff in the oven
-<h2>Goal of the project:</h2>
-The goal was to solve a real world problem and in the journey program an avr without arduino, learn about interrupts and timers, and finally about pcb design.
+A small Atmega168 based Kitchentimer to measure cooking time for your meals. Forget about downloading another app or using your phone. Do it the old fashioned way, like  it's the 90's. Put the pizza in the oven, configure your Kitchenalarm and let it beep like a fire alarm on steroids when your pizza is ready.
 
-<h2>Components:</h2>
-  <br>-Atmega168</br> 
-  <br>-Rotary Encoder</br> 
-  <br>-Buzzer</br>
+## Table of Contents
+1. [About the Project](#about-the-project)
+2. [Project Status](#project-status)
+3. [Getting Started](#getting-started)
+
+## About the project
+This one was one of my first projects writing bare metal C. What i wanted to do is develop the simplest device possible, write the software, make a pcb and print a 3D case for it. A Timer is a device everyone is familiar with, so i decided to go for that. I took an atmega168, programmed it using avrdude and made a simple pcb for the circuitry using KiCad. Using the OnShape software i designed a case for the pcb and this was the end result.
   
-<h2>How it works</h2>
-When device is powered, initially nothing happens until the button of the rotary encoder is pressed. If it is not pressed, after one minute, the device goes to sleep.
-In case it is pressed, we can configure the minutes, which are displayed on the 7-segment display, with the rotary encoder. With one press, we can now confire the seconds. With another press
-we activate the alarm, and the device starts counting down starting by the introduced minute and second. When the device reaches 0, a buzzer is activated and it won't shut down until the button is pressed.
-After this the device goes again on "waiting for response" mode.
+## Project Status
+The project is still under development after version 1. Some new improvements that are being implemented for version 2 are:
+- [x] Grounded plane in both PCB layers to reduce noise
+- [x] SMD Components
+- [x] USB-C Port for battery charging 
+- [x] Programming port to match usbasp
+      
+These new features have already been implemented in the new KiCad design and can be seen in the **Hardware** directory. Once i solder the new pcb i will upload the results with pictures.
 
-<h2>What i learned</h2>
- <br>-Program atmega168 without arduino</br>
- <br>-Use of interrupts</br>
- <br>-Use of timers</br>
- <br>-Use of deep sleep</br>
- <br>-A bit about pcb design</br>
+## Getting Started
+The Kitchenalarm has a **Rotary Encoder** that lets you configure the Minutes and Seconds through the encoder's rotation.
+1. Press the Rotary Encoder on the board to configure the Minutes and adjust it rotating the encoder 
+2. Press it once again to configure the Seconds and rotate it to adjust 
+3. Press the encoder one last time to activate the Timer with the Minutes and Seconds you configured in step 1 and step 2. The Timer will start counting down on the 7-Segment Display (To reset the countdown press the Encoder)
+4. When the Timer reaches 00:00 (on the Display) the buzzer on the Board will start beeping. Your pizza is ready. Press the Encoder once to stop the beeping
+5. The Kitchenalarm goes automatically to deep sleep if it is not given instructions. To wake it up just press the Encoder
 
-<h2>Things i would have done differently</h2>
-<br>-Chosen a smaller atmega168 perhaps smd version instead of tht to save space</br>
-<br>-Have all of the pcb grounded. The design is prone to produce noise because pcb is not grounded</br>
-<br>-Plan the software better, perhaps using state machines</br>
-
-<br></br>
 
 ![pizza_clock_1](https://github.com/LucasCanete/KitchenAlarm/assets/57593487/5ca24377-a864-4aa4-a371-c07be57d8711)
 
