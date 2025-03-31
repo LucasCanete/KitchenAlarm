@@ -26,9 +26,21 @@ This one was one of my first projects writing bare metal C. What i wanted to do 
 | Battery Charger  | BQ24090 | Texas Instruments |
 
 ## Getting Started
-### Installation
-comming soon
-
+### Install AVRDUDE
+```
+sudo apt install avrdude
+```
+### Download this repo
+```
+git clone https://github.com/LucasCanete/KitchenAlarm.git
+```
+### Build and upload 
+Connect the KitchenAlarm to the PC using usbasp and upload the code:
+```
+cd KitchenAlarm/Software
+$KitchenAlarm/Software make
+$KitchenAlarm/Software make flash
+```
 ### Use
 The Kitchenalarm has a **Rotary Encoder** that lets you configure the Minutes and Seconds through the encoder's rotation.
 1. Press the Rotary Encoder on the board to configure the Minutes and adjust it rotating the encoder 
