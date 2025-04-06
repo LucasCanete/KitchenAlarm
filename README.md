@@ -50,10 +50,10 @@ The Kitchenalarm has a **Rotary Encoder** that lets you configure the Minutes an
 5. The Kitchenalarm goes automatically to deep sleep if it is not given instructions. To wake it up just press the Encoder
 
 
-![pizza_clock_1](https://github.com/LucasCanete/KitchenAlarm/assets/57593487/5ca24377-a864-4aa4-a371-c07be57d8711)
-
-
-![pizza_clock_2](https://github.com/LucasCanete/KitchenAlarm/assets/57593487/21c0dfde-b75c-4e0b-abf3-99eb028f383b)
+<p align="center">
+   <img src="images/kitchenalarm_3.png" alt="Design" width="600" height="700"/> 
+   <img src="images/kitchenalarm_2.jpeg" alt="kitchenalarm" width="600" height="700"/>
+</p>
 
 ## Project Status
 The project is still under development after version 1. Some new improvements that are being implemented for version 2 are:
