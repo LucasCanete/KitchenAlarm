@@ -16,6 +16,7 @@ This one was one of my first projects writing bare metal C. What i wanted to do 
 - 4 Digit 7 Segment Display for displaying the time
 - Buzzer Alarm for beeping when time has runned up
 - Deep sleep Mode after 1 Minute of not receiving instructions
+- USB-C charger port with leds for indicating charging status
 
 ## Components
 | Component | Model  | Manufacturer  |
@@ -56,10 +57,8 @@ The Kitchenalarm has a **Rotary Encoder** that lets you configure the Minutes an
 </p>
 
 ## Project Status
-The project is still under development after version 1. Some new improvements that are being implemented for version 2 are:
-- [x] Grounded plane in both PCB layers to reduce noise
-- [x] SMD Components
-- [x] USB-C Port for battery charging 
-- [x] Programming port to match usbasp
-      
-These new features have already been implemented in the new KiCad design and can be seen in the **Hardware** directory. Once i solder the new pcb i will upload the results with pictures.
+The project has been built but is still under test. Some of the testing points are:
+- [ ] Correct charging of the battery (Led indicates when charging is not complete/complete)
+- [ ] Not battery does not get damaged because of the charges
+- [ ] No overheating of the battery 
+
