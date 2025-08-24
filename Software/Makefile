@@ -1,19 +1,39 @@
- 
+
 
 ##########------------------------------------------------------##########
 ##########              Project-specific Details                ##########
 ##########    Check these every time you start a new project    ##########
 ##########------------------------------------------------------##########
-#atmega168 or attiny85
+#atmega168 or attiny85 or atmega328p
 MCU   = atmega168
 F_CPU = 1000000UL
 BAUD  = 9600UL
+
+
+
+ifeq ($(STD),)
+STD=c++17
+endif
+
+BUILD_DIR=./build
+LIB_DIR= /home/lucas/Embedded/AVR_projects/pizza_clock_v2
+LIBDIR = /home/lucas/Embedded/AVR_projects/pizza_clock_v2/include
+
+ifeq ($(INC),)
+INCLUDES= -I$(LIB_DIR)/include
+else
+INCLUDES= -I$(INC)
+endif
+
+
+
+
 ## Also try BAUD = 19200 or 38400 if you're feeling lucky.
 
 ## A directory for common include files and the simple USART library.
 ## If you move either the current folder or the Library folder, you'll
 ##  need to change this path to match.
-LIBDIR = /home/lucas/Embedded/AVR_projects/pizza_clock/include
+#LIBDIR = /home/lucas/Embedded/AVR_projects/test_cpp/include
 
 ##########------------------------------------------------------##########
 ##########                 Programmer Defaults                  ##########
@@ -31,6 +51,7 @@ PROGRAMMER_ARGS =
 ##########------------------------------------------------------##########
 
 CC = avr-gcc
+CXX=avr-g++
 OBJCOPY = avr-objcopy
 OBJDUMP = avr-objdump
 AVRSIZE = avr-size
@@ -53,74 +74,54 @@ TARGET = $(lastword $(subst /, ,$(CURDIR)))
 # Object files: will find all .c/.h files in current directory
 #  and in LIBDIR.  If you have any other (sub-)directories with code,
 #  you can add them in to SOURCES below in the wildcard statement.
-SOURCES=$(wildcard *.c $(LIBDIR)/*.c)
-OBJECTS=$(SOURCES:.c=.o)
-HEADERS=$(SOURCES:.c=.h)
+SOURCES=$(wildcard *.cpp $(LIBDIR)/*.cpp)
+#OBJECTS=$(SOURCES:.cpp=.o)
+#HEADERS=$(SOURCES:.cpp=.h)
+VPATH=.:$(LIBDIR)
+#OBJECTS=$(addprefix $(BUILD_DIR)/,$(notdir $(SOURCES:%=%.o))) # only works when everything is in the same repo, include repo must be empty
 
-## Compilation options, type man avr-gcc if you're curious.
-CPPFLAGS = -DF_CPU=$(F_CPU) -DBAUD=$(BAUD) -I. -I$(LIBDIR)
-CFLAGS = -Os -g -std=gnu99 -Wall
-## Use short (8-bit) data types
-CFLAGS += -funsigned-char -funsigned-bitfields -fpack-struct -fshort-enums
-## Splits up object files per function
-CFLAGS += -ffunction-sections -fdata-sections
-LDFLAGS = -Wl,-Map,$(TARGET).map
-## Optional, but often ends up with smaller code
-LDFLAGS += -Wl,--gc-sections
-## Relax shrinks code even more, but makes disassembly messy
-## LDFLAGS += -Wl,--relax
-## LDFLAGS += -Wl,-u,vfprintf -lprintf_flt -lm  ## for floating-point printf
-## LDFLAGS += -Wl,-u,vfprintf -lprintf_min      ## for smaller printf
-TARGET_ARCH = -mmcu=$(MCU)
+OBJECTS=$(addprefix $(BUILD_DIR)/,$(notdir $(SOURCES:%=%.o)))
 
-## Explicit pattern rules:
-##  To make .o files from .c files
-%.o: %.c $(HEADERS) Makefile
-	 $(CC) $(CFLAGS) $(CPPFLAGS) $(TARGET_ARCH) -c -o $@ $<;
+WARNFLAGS=-Wall -Wextra -pedantic
 
-$(TARGET).elf: $(OBJECTS)
-	$(CC) $(LDFLAGS) $(TARGET_ARCH) $^ $(LDLIBS) -o $@
+ifeq ($(STD),c++20)
+WARNFLAGS+=-Wno-volatile
+endif
 
-%.hex: %.elf
-	 $(OBJCOPY) -j .text -j .data -O ihex $< $@
+CXXFLAGS=-std=$(STD) -O2 $(WARNFLAGS) -I. -I$(LIBDIR) -fno-exceptions -fno-rtti -fno-unwind-tables -fno-threadsafe-statics -Wshadow -Wcast-qual -Wpointer-arith -Wundef
+LDFLAGS=-lm
 
-%.eeprom: %.elf
-	$(OBJCOPY) -j .eeprom --change-section-lma .eeprom=0 -O ihex $< $@
 
-%.lst: %.elf
-	$(OBJDUMP) -S $< > $@
-
-## These targets don't have files named after them
-.PHONY: all disassemble disasm eeprom size clean squeaky_clean flash fuses
 
 all: $(TARGET).hex
 
-debug:
-	@echo
-	@echo "Source files:"   $(SOURCES)
-	@echo "MCU, F_CPU, BAUD:"  $(MCU), $(F_CPU), $(BAUD)
-	@echo
+hex: $(TARGET).hex
 
-# Optionally create listing file from .elf
-# This creates approximate assembly-language equivalent of your code.
-# Useful for debugging time-sensitive bits,
-# or making sure the compiler does what you want.
-disassemble: $(TARGET).lst
 
-disasm: disassemble
+$(TARGET).hex: $(TARGET).elf
+	avr-objcopy -O ihex -j .data -j .text $(TARGET).elf $(TARGET).hex
 
-# Optionally show how big the resulting program is
-size:  $(TARGET).elf
-	$(AVRSIZE) -C --mcu=$(MCU) $(TARGET).elf
+$(TARGET).elf: $(OBJECTS)
+	avr-g++ $(LDFLAGS) -mmcu=$(MCU) $(OBJECTS) -o $(TARGET).elf
+
+$(BUILD_DIR)/%.cpp.o: %.cpp
+	@mkdir -p $(BUILD_DIR)
+	avr-g++ -c $(CXXFLAGS) -mmcu=$(MCU) $(INCLUDES) $< -o $@
+
+$(BUILD_DIR)/%.cc.o: %.cc
+	@mkdir -p $(BUILD_DIR)
+	avr-g++ -c $(CXXFLAGS) -mmcu=$(MCU) $(INCLUDES) $< -o $@
+
+size: $(TARGET).elf
+	avr-objdump -Pmem-usage $(TARGET).elf
+
+program: $(TARGET).hex
+	avrdude -p$(MCU) $(AVRDUDE_FLAGS) -c$(PROGRAMMER) -Uflash:w:$(TARGET).hex:a
 
 clean:
-	rm -f $(TARGET).elf $(TARGET).hex $(TARGET).obj \
-	$(TARGET).o $(TARGET).d $(TARGET).eep $(TARGET).lst \
-	$(TARGET).lss $(TARGET).sym $(TARGET).map $(TARGET)~ \
-	$(TARGET).eeprom
-
-squeaky_clean:
-	rm -f *.elf *.hex *.obj *.o *.d *.eep *.lst *.lss *.sym *.map *~ *.eeprom
+	rm -rf $(BUILD_DIR)/*.o
+	rm -rf $(BUILD_DIR)/*.elf
+	rm -rf $(BUILD_DIR)/*.hex
 
 ##########------------------------------------------------------##########
 ##########              Programmer-specific details             ##########
