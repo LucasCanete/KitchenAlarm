@@ -56,9 +56,9 @@ The Kitchenalarm has a **Rotary Encoder** that lets you configure the Minutes an
    <img src="images/kitchenalarm_2.jpeg" alt="kitchenalarm" width="300" height="350" style="display:inline-block;" />
 </p>
 
-## Project Status
-The project has been built but is still under test. Some of the testing points are:
-- [ ] Correct charging of the battery (Led indicates when charging is not complete/complete)
-- [ ] Not battery does not get damaged because of the charges
-- [ ] No overheating of the battery 
+## Project Corretions
+The project is still under development. Here are some improvement points for the next version. Crossed points havve alredy been implemented in the kicad design.
+- [x] Add Rd resistors to USB-C for it to be detected as a passive device
+- [x] Add resistor to buzzer transistor
+- [ ] Use driver for efficient control of 7 segment display (MAX7219 or TM1637)
 
