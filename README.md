@@ -60,10 +60,12 @@ The Kitchenalarm has a **Rotary Encoder** that lets you configure the Minutes an
 </p>
 
 ## Project Status
-The project is still under development after version 1. Some new improvements that are being implemented for version 2 are:
-- [x] Grounded plane in both PCB layers to reduce noise
-- [x] SMD Components
-- [x] USB-C Port for battery charging 
-- [x] Programming port to match usbasp
+This project is currently on stand by. After three iterations and continuous improvement i decided to pause the project. I have learn a lot: pcb design, embedded programming, 3d printing, etc. but now i want to focus on other projects.
+The main issue with this project right now is the battery charger with the BQ24090 Chip. With the current design the charger is unable to detect the battery load and fully charge it. I do not have the patience at the moment to find out what the issue is. In the future when i posses more knowledge i will resume with this project.
+
+Some ideas i have for the project are:
+
+- [x] Use LED driver chip (e.g. MAX7219) for driving the 7 segement display (Spares me a lot of gpios)
+- [x] Add a quartz crystal to the atmega for more precise counting
       
 These new features have already been implemented in the new KiCad design and can be seen in the **Hardware** directory. Once i solder the new pcb i will upload the results with pictures.
