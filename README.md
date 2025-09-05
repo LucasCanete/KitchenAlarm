@@ -51,8 +51,8 @@ The Kitchenalarm has a **Rotary Encoder** that lets you configure the Minutes an
 
 
 <p align="center">
-   <img src="images/kitchenalarm_3.png" alt="Design" width="300" height="350" style="display:inline-block; margin-right: 10px;" /> 
-   <img src="images/kitchenalarm_2.jpeg" alt="kitchenalarm" width="300" height="350" style="display:inline-block;" />
+   <img src="images/exploded_view.png" alt="Design" width="300" height="350" style="display:inline-block; margin-right: 10px;" /> 
+   <img src="images/pizzaclock_case.jpeg" alt="kitchenalarm" width="300" height="350" style="display:inline-block;" />
 </p>
 
 ## Project Status
