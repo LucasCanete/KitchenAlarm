@@ -11,6 +11,10 @@ A small Atmega168 based Kitchentimer to measure cooking time for your meals. For
 ## About the project
 This one was one of my first projects writing bare metal C. What i wanted to do is develop the simplest device possible, write the software, make a pcb and print a 3D case for it. A Timer is a device everyone is familiar with, so i decided to go for that. I took an atmega168, programmed it using avrdude and made a simple pcb for the circuitry using KiCad. Using the OnShape software i designed a case for the pcb and this was the end result.
 
+<p align="center">
+<img src="images/exploded_view.png" alt="explodedview" width="500" height="700" style="display:inline-block;" />
+</p>
+
 ## Features
 - Rotary Encoder for configuring minutes and seconds
 - 4 Digit 7 Segment Display for displaying the time
@@ -51,7 +55,7 @@ The Kitchenalarm has a **Rotary Encoder** that lets you configure the Minutes an
 
 
 <p align="center">
-   <img src="images/exploded_view.png" alt="Design" width="300" height="350" style="display:inline-block; margin-right: 10px;" /> 
+   <img src="images/pizzaclock_pcb.jpeg" alt="Design" width="300" height="320" style="display:inline-block; margin-right: 10px;" /> 
    <img src="images/pizzaclock_case.jpeg" alt="kitchenalarm" width="300" height="350" style="display:inline-block;" />
 </p>
 
