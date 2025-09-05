@@ -9,6 +9,7 @@
 #include "SevenSegmentDisplay.h"
 #include "RotaryEncoder.h"
 #include "defines.h"
+#include "Buzzer.h"
 
 
 int8_t unit_sec = 0;
@@ -18,6 +19,8 @@ int8_t unit_min = 0;
 int8_t ten_min = 0;
 
 volatile uint16_t COUNTER_TIMEOUT = 0;
+volatile bool should_sleep = false;
+volatile bool was_sleeping = false;
 
 namespace ButtonState {
   enum State {
@@ -55,8 +58,14 @@ ISR(PCINT0_vect){
     uint8_t currentButtonVal = rotary.readButton();
     //Button was pressed
     if(!currentButtonVal && prevButtonVal){
-      // Detect falling edge → button was just pressed
-      buttonStatus = ButtonState::PRESSED;
+      if(was_sleeping) {
+        was_sleeping = false;
+      }
+      //detect only if before we were not sleeping
+      else{
+        // Detect falling edge → button was just pressed
+        buttonStatus = ButtonState::PRESSED;
+      }
     }
 
     prevButtonVal = currentButtonVal;
@@ -70,15 +79,7 @@ ISR(TIMER1_COMPA_vect) {
   if(alarmState == Alarm::SET && (unit_min + ten_min + unit_sec+ten_sec > 0)){ unit_sec--;}
 
   else if (alarmState == Alarm::NOT_SET && current_state == IDLE && COUNTER_TIMEOUT == 60 ){
-      COUNTER_TIMEOUT = 0;
-      display.clear();
-
-      set_sleep_mode(SLEEP_MODE_PWR_DOWN);   // Set power-down sleep mode
-			cli(); //cli before sleep enable to avoid interferance with interrupts
-			sleep_enable();   // Enable sleep mode
-			sei();
-			sleep_cpu();
-
+    should_sleep = true;
   }
 }
 
@@ -228,8 +229,19 @@ void initInterruptSW(){
      switch(current_state){
        case IDLE:
 
+            if(should_sleep){
+                COUNTER_TIMEOUT = 0;
+                should_sleep = false;
+                was_sleeping = true; //flag for reentering idle when waking up after sleep
+                display.clear();
+                set_sleep_mode(SLEEP_MODE_PWR_DOWN);   // Set power-down sleep mode
+                cli(); //cli before sleep enable to avoid interferance with interrupts
+                sleep_enable();   // Enable sleep mode
+                sei();
+                sleep_cpu();
+              }
+
              if(current_state != prev_state){
-               display.show_value(prev_state);
                _delay_ms(500);
                prev_state = current_state;
              }
@@ -239,7 +251,7 @@ void initInterruptSW(){
 
             if(buttonStatus == ButtonState::PRESSED){
               buttonStatus = ButtonState::NOT_PRESSED;
-              //prev_state = IDLE;
+              prev_state = IDLE;
               current_state = PROG_MIN;
             }
 
@@ -328,6 +340,7 @@ void initInterruptSW(){
             break;
 
        case BEEP:
+
           BUZZER_PORT |= (1 << BUZZER_PIN);
           _delay_ms(300);
           BUZZER_PORT &= ~(1 << BUZZER_PIN);
