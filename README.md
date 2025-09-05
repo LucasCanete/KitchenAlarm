@@ -65,7 +65,7 @@ The main issue with this project right now is the battery charger with the BQ240
 
 Some ideas i have for the project are:
 
-- [x] Use LED driver chip (e.g. MAX7219) for driving the 7 segement display (Spares me a lot of gpios)
+- [x] Use LED driver chip (e.g. MAX7219) for driving the 7 segment display (Spares me a lot of gpios)
 - [x] Add a quartz crystal to the atmega for more precise counting
       
 These new features have already been implemented in the new KiCad design and can be seen in the **Hardware** directory. Once i solder the new pcb i will upload the results with pictures.
